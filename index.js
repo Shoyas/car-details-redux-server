@@ -20,8 +20,9 @@ const port = 5000;
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect(err => {
-  const carDetailCollection = client.db(`${process.env.DB_NAME}`).collection(`${process.env.DB_COLL1}`);
-  
+  const carDetailCollection = client.db(`${process.env.DB_NAME}`).collection(`${process.env.DB_COLL1}`); 
+  const makeAdminCollection = client.db(`${process.env.DB_NAME}`).collection(`${process.env.DB_COLL2}`);
+
   // for sending a packet of data from FakeData coding starts
   // app.post('/addCarDetail', (req, res) => {
   //   const car = req.body;
@@ -84,9 +85,7 @@ client.connect(err => {
 
   // Updating the loaded data coding starts from here
   app.patch('/updateCar/:id', (req, res) => {
-    
     console.log(req.body.name);
-
     carDetailCollection.updateOne({_id: ObjectId(req.params.id)},
     {
       $set: {name: req.body.name, description: req.body.description}
@@ -95,8 +94,26 @@ client.connect(err => {
       console.log(result);
     })
   })
-  
 
+  // Sending making admin information
+  app.post('/makeAdmin', (req, res) => {
+    const admin = req.body;
+    makeAdminCollection.insertOne(admin)
+    .then(result => {
+      res.send(result.insertedCount > 0)
+    })
+  })
+
+  // filter admin for access sensitive area
+  app.post('/getAdmin', (req, res) => {
+    const email = req.body.email;
+    makeAdminCollection.find({email: email})
+    .toArray((error, documents) => {
+       res.send(documents.length > 0);
+      
+    })
+  })
+  
 
 });
 
